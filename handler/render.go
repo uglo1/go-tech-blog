@@ -14,8 +14,10 @@ func htmlBlob(file string, data map[string]interface{}) ([]byte, error) {
 }
 
 func render(c echo.Context, file string, data map[string]interface{}) error {
-	b, err := htmlBlob(file, data)
+	// 発行されたトークンをHTMLに返すため、設定する
+	data["CSRF"] = c.Get("csrf").(string)
 
+	b, err := htmlBlob(file, data)
 	if err != nil {
 		return c.NoContent(http.StatusInternalServerError)
 	}
