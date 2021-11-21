@@ -13,19 +13,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const articleFormPreview = document.querySelector('.article-form__preview');
   const articleFormBodyTextArea = document.querySelector('.article-form__input--body');
   const articleFormPreviewTextArea = document.querySelector('.article-form__preview-body-contents');
+  const errors = document.querySelector('.article-form__errors');
+  const errorTmpl = document.querySelector('.article-form__error-tmpl').firstElementChild;
 
   // 新規作成画面か編集画面かを URL から判定します。
   const mode = { method: '', url: '' };
   if (window.location.pathname.endsWith('new')) {
     // 新規作成時の HTTP メソッドは POST を利用します。
     mode.method = 'POST';
-    // 作成リクエスト、および戻るボタンの遷移先のパスは "/" になります。
-    mode.url = '/';
+    // 作成リクエスト、および戻るボタンの遷移先のパスは "/articles" になります。
+    mode.url = '/articles';
   } else if (window.location.pathname.endsWith('edit')) {
     // 更新時の HTTP メソッドは PATCH を利用します。
     mode.method = 'PATCH';
-    // 更新リクエスト、および戻るボタンの遷移先のパスは "/:articleID" になります。
-    mode.url = `/${window.location.pathname.split('/')[1]}`;
+    // 更新リクエスト、および戻るボタンの遷移先のパスは "articles/:articleID" になります。
+    mode.url = `/articles/${window.location.pathname.split('/')[2]}`;
   }
   const { method, url } = mode;
 
@@ -80,12 +82,15 @@ document.addEventListener('DOMContentLoaded', () => {
   saveBtn.addEventListener('click', event => {
     event.preventDefault();
 
+    // 前回のバリデーションエラーの表示が残っている場合は削除する。
+    errors.innerHTML = null;
+
     // フォームに入力された内容を取得します。
     const fd = new FormData(form);
 
     let status;
     // fetch API を利用してリクエストを送信します。
-    fetch(url, {
+    fetch(`/api${url}`, {
       method: method,
       headers: { 'X-CSRF-Token': csrfToken },
       body: fd
@@ -104,8 +109,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (body.ValidationErrors) {
         // バリデーションエラーがある場合の処理をここに記載します。
+        showErrors(body.ValidationErrors);
       }
     })
     .catch(err => console.error(err));
   });
+
+  // バリデーションエラーを表示する
+  const showErrors = messages => {
+    if(Array.isArray(messages) && messages.length != 0) {
+      const fragment = document.createDocumentFragment();
+  
+      messages.forEach(message => {
+        const frag = document.createDocumentFragment();
+        frag.appendChild(errorTmpl.cloneNode(true));
+        frag.querySelector('.article-form__error').innerHTML = message;
+        fragment.appendChild(frag);
+      });
+  
+      errors.appendChild(fragment);
+    }
+  }
 });

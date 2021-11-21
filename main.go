@@ -11,6 +11,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 var db *sqlx.DB
@@ -20,11 +21,19 @@ func main() {
 	db = connectDB()
 	repository.SetDB(db)
 
+	// TOPページ、記事の一覧
 	e.GET("/", handler.ArticleIndex)
-	e.GET("/new", handler.ArticleNew)
-	e.GET("/:id", handler.ArticleShow)
-	e.GET("/:id/edit", handler.ArticleEdit)
-	e.POST("/", handler.ArticleCreate)
+
+	// 記事に関するページ "/articles"
+	e.GET("/articles", handler.ArticleIndex)
+	e.GET("/articles/new", handler.ArticleNew)
+	e.GET("/articles/:articleID", handler.ArticleShow)
+	e.GET("/articles/:articleID/edit", handler.ArticleEdit)
+
+	// HTMLではなく、JSONを返却 -> "/api"
+	e.GET("/api/articles", handler.ArticleList)
+	e.POST("api/articles", handler.ArticleCreate)
+	e.DELETE("/api/articles/:articleID", handler.ArticleDelete)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }
@@ -54,5 +63,17 @@ func createMux() *echo.Echo {
 	e.Static("/css", "src/css")
 	e.Static("/js", "src/js")
 
+	e.Validator = &CustomValidator{validator: validator.New()}
+
 	return e
+}
+
+// CustormValidator
+type CustomValidator struct {
+	validator *validator.Validate
+}
+
+// Validate ...
+func (cv *CustomValidator) Validate(i interface{}) error {
+	return cv.validator.Struct(i)
 }
