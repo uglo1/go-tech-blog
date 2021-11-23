@@ -78,3 +78,44 @@ func ArticleDelete(id int) error {
 
 	return tx.Commit()
 }
+
+// ArticleGetByID ...
+func ArticleGetByID(id int) (*model.Article, error) {
+	query := `SELECT *
+	FROM articles
+	WHERE id = ?;`
+
+	var article model.Article
+
+	if err := db.Get(&article, query, id); err != nil {
+		return nil, err
+	}
+
+	return &article, nil
+}
+
+// ArticleUpdate ...
+func ArticleUpdate(article *model.Article) (sql.Result, error) {
+	now := time.Now()
+	article.Updated = now
+
+	query := `UPDATE articles
+	SET title = :title,
+			body = :body,
+			updated = :updated
+	WHERE id = :id;`
+
+	tx := db.MustBegin()
+
+	res, err := tx.NamedExec(query, article)
+
+	if err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	// エラーがない場合はコミットを忘れない
+	tx.Commit()
+
+	return res, nil
+}

@@ -1,1 +1,6 @@
-console.log('this is article/show.js');
+'use struct';
+
+document.addEventListener('DOMContentLoaded', function() {
+  const elm = document.getElementById('article-body');
+  elm.innerHTML = md.render(elm.dataset.markdown);
+})

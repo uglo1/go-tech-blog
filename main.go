@@ -34,8 +34,13 @@ func main() {
 	e.GET("/api/articles", handler.ArticleList)
 	e.POST("api/articles", handler.ArticleCreate)
 	e.DELETE("/api/articles/:articleID", handler.ArticleDelete)
+	e.PATCH("/api/articles/:articleID", handler.ArticleUpdate)
 
-	e.Logger.Fatal(e.Start(":8080"))
+	port := os.Getenv("PORT")
+	if port == "" {
+		e.Logger.Fatal("$PORT must be set")
+	}
+	e.Logger.Fatal(e.Start(":" + port))
 }
 
 // DB接続

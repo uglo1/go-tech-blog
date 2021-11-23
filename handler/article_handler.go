@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"go-tech-blog/model"
@@ -71,10 +72,15 @@ func ArticleNew(c echo.Context) error {
 func ArticleShow(c echo.Context) error {
 	id, _ := strconv.Atoi(c.Param("articleID"))
 
+	article, err := repository.ArticleGetByID(id)
+
+	if err != nil {
+		c.Logger().Error(err.Error())
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
 	data := map[string]interface{}{
-		"Message": "Article Show",
-		"Now":     time.Now(),
-		"ID":      id,
+		"Article": article,
 	}
 
 	return render(c, "article/show.html", data)
@@ -84,10 +90,15 @@ func ArticleShow(c echo.Context) error {
 func ArticleEdit(c echo.Context) error {
 	id, _ := strconv.Atoi(c.Param("articleID"))
 
+	article, err := repository.ArticleGetByID(id)
+
+	if err != nil {
+		c.Logger().Error(err.Error())
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
 	data := map[string]interface{}{
-		"Message": "Article Edit",
-		"Now":     time.Now(),
-		"ID":      id,
+		"Article": article,
 	}
 
 	return render(c, "article/edit.html", data)
@@ -145,4 +156,53 @@ func ArticleDelete(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, fmt.Sprintf("Article %d is deleted.", id))
+}
+
+// ArticleUpdateOutput ...
+type ArticleUpdateOutput struct {
+	Article          *model.Article
+	Message          string
+	ValidationErrors []string
+}
+
+// ArticleUpdate ...
+func ArticleUpdate(c echo.Context) error {
+	// リスエスト送信元のパスを取得
+	ref := c.Request().Referer()
+	// リスエスト送信元のパスから記事IDを抽出する
+	refID := strings.Split(ref, "/")[4]
+
+	// リクエストURLのパスパラメータから記事IDを抽出する
+	reqID := c.Param("articleID")
+
+	// 編集画面で表示している記事と更新しようとしている記事が異なる
+	if reqID != refID {
+		return c.JSON(http.StatusBadRequest, "")
+	}
+
+	var article model.Article
+	var out ArticleUpdateOutput
+
+	if err := c.Bind(&article); err != nil {
+		return c.JSON(http.StatusBadRequest, out)
+	}
+
+	if err := c.Validate(&article); err != nil {
+		out.ValidationErrors = article.ValidationErrors(err)
+		return c.JSON(http.StatusUnprocessableEntity, out)
+	}
+
+	articleID, _ := strconv.Atoi(reqID)
+	article.ID = articleID
+
+	_, err := repository.ArticleUpdate(&article)
+
+	if err != nil {
+		out.Message = err.Error()
+		return c.JSON(http.StatusInternalServerError, out)
+	}
+
+	out.Article = &article
+
+	return c.JSON(http.StatusOK, out)
 }

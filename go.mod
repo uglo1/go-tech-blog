@@ -1,3 +1,5 @@
+  // +heroku install bitbucket.org/liamstask/goose/cmd/goose ./...
+
 module go-tech-blog
 
 go 1.16

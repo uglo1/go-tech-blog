@@ -8,8 +8,8 @@ development:
     open: tcp:localhost:3306*techblog/workuser/Passw0rd!
     
 production:
-    driver: postgres
-    open: user=liam dbname=tester sslmode=verify-full
+    driver: mymysql
+    open: $GOOSE_CONNECTION
 
 customimport:
     driver: customdriver
