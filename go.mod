@@ -1,4 +1,4 @@
-// +heroku install ./... bitbucket.org/liamstask/goose/cmd/goose
+// +heroku install bitbucket.org/liamstask/goose/cmd/goose ./...
 
 module go-tech-blog
 
